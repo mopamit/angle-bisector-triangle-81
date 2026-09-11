@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>יישומון חוצה זווית במשולש</title>
+<style>
+@font-face{font-family:SimplerPro;src:url('assets/fonts/SimplerPro-Regular.woff2') format('woff2');font-weight:400}
+@font-face{font-family:SimplerPro;src:url('assets/fonts/SimplerPro-Semibold.woff2') format('woff2');font-weight:600}
+@font-face{font-family:SimplerPro;src:url('assets/fonts/SimplerPro-Bold.woff2') format('woff2');font-weight:700}
+:root{--blue:#17365e;--green:#6db580;--mustard:#e7b976;--burgundy:#832058;--line:#6f7f8f;--bg:#faf9f5;--card:#fff;--border:#e8e4dc;--muted:#536273}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:SimplerPro,Arial,sans-serif;color:var(--blue);padding:20px;direction:rtl}
+.app{max-width:1180px;margin:auto}
+.topbar{display:grid;grid-template-columns:180px 1fr 180px;align-items:center;min-height:70px;margin-bottom:18px;direction:ltr}
+.logo{justify-self:start;height:44px;width:auto;object-fit:contain}
+.title{font-size:31px;font-weight:700;color:var(--burgundy);text-align:center;direction:rtl}
+.reset{justify-self:end;direction:rtl;border:1px solid #d8dce1;background:#fff;color:var(--blue);font:600 16px SimplerPro;padding:10px 20px;border-radius:12px;cursor:pointer}
+.reset:hover{background:#f3f5f6}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:stretch;direction:ltr}
+.card{background:var(--card);border:1px solid var(--border);border-radius:22px;box-shadow:0 3px 14px rgba(23,54,94,.06)}
+.geometry{padding:18px;min-height:570px;display:flex;flex-direction:column;justify-content:center;direction:rtl}
+.instructions{padding:26px 24px;direction:rtl;text-align:right}
+.instructions h2{margin:0 0 16px;color:var(--burgundy);font-size:28px;line-height:1.15}
+.instructions p{font-size:18px;line-height:1.65;margin:0 0 20px;color:var(--burgundy)}
+.instructions strong{font-weight:700}
+.selector-title{font-size:17px;font-weight:600;color:var(--blue);margin:18px 0 9px}
+.vertex-select{display:grid;gap:9px}
+.vbtn,.ratio-btn{font:600 16px SimplerPro;border-radius:12px;padding:11px 14px;cursor:pointer;transition:.15s}
+.vbtn{background:#fff;color:var(--blue);border:1.5px solid #d7dde2}
+.vbtn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.ratio-btn{width:100%;margin-top:16px;background:var(--blue);color:#fff;border:0}
+.vbtn:hover,.ratio-btn:hover{filter:brightness(.98)}
+svg{width:100%;height:auto;display:block;touch-action:none;user-select:none;overflow:visible}
+.side{stroke:var(--line);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.bisector-line{stroke:var(--blue);stroke-width:2;stroke-linecap:round}
+.intersection-dot{fill:#fff;stroke:var(--blue);stroke-width:3}
+.angle-arc{fill:none;stroke:var(--burgundy);stroke-width:3;stroke-linecap:round}
+.angle-value-bg{fill:#fff;stroke:rgba(131,32,88,.22);stroke-width:1.2;rx:8;ry:8;pointer-events:none}
+.angle-value{font-family:SimplerPro,Arial,sans-serif;font-weight:700;font-size:16px;fill:var(--burgundy);text-anchor:middle;dominant-baseline:middle;pointer-events:none;direction:ltr}
+.length-bg{fill:#fff;stroke:#e0e5e7;stroke-width:1.2;rx:8;ry:8;pointer-events:none;opacity:0;transition:opacity .18s}
+.length-bg.show{opacity:.96}
+.length-label{font-family:SimplerPro,Arial,sans-serif;font-weight:700;font-size:15px;text-anchor:middle;dominant-baseline:middle;pointer-events:none;direction:ltr;opacity:0;transition:opacity .18s}
+.length-label.show{opacity:1}
+.length-label.pair1{fill:#4f9f68}.length-label.pair2{fill:#b88942}
+.vhandle{fill:#fff;stroke:var(--burgundy);stroke-width:3;cursor:grab}
+.vhandle:active{cursor:grabbing}
+.vhandle.selected{fill:var(--burgundy);stroke:var(--burgundy)}
+.vlabel,.dlabel{font-weight:700;font-size:17px;fill:var(--blue);text-anchor:middle;pointer-events:none}
+.theorem-highlight{stroke-width:5;stroke-linecap:round;opacity:0;transition:opacity .18s;pointer-events:none}
+.theorem-highlight.show{opacity:.78}
+.pair1{stroke:var(--green)}
+.pair2{stroke:var(--mustard)}
+.theorem-panel{display:none;margin-top:14px;padding:15px 16px;border-radius:14px;background:#f8faf7;border:1px solid #dfe8df;color:var(--blue)}
+.theorem-panel.show{display:block}
+.theorem-panel h3{margin:0 0 8px;color:var(--burgundy);font-size:18px}
+.theorem-panel p{margin:0 0 10px;color:var(--blue);font-size:16px;line-height:1.45}
+.theorem-formula,.theorem-values{direction:ltr;text-align:center;font-family:Georgia,'Times New Roman',serif}
+.theorem-formula{font-weight:700;font-size:22px;margin:12px 0 10px;display:flex;align-items:center;justify-content:center;gap:12px}
+.theorem-values{font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
+.frac{display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;min-width:48px;line-height:1.08;text-align:center}
+.frac .num{display:block;padding:0 7px 4px;border-bottom:2px solid currentColor}
+.frac .den{display:block;padding:4px 7px 0}
+.theorem-values .frac{min-width:58px}
+.theorem-values .frac .num{border-bottom-width:1.5px}
+.eq-sign{font-family:Georgia,'Times New Roman',serif;color:var(--blue);font-weight:700}
+.key1{color:#4f9f68}.key2{color:#b88942}
+.math-ltr{direction:ltr;unicode-bidi:isolate}
+
+@media(max-width:800px){body{padding:12px}.topbar{grid-template-columns:100px 1fr 100px;min-height:60px}.logo{height:34px}.title{font-size:24px}.reset{font-size:14px;padding:8px 12px}.workspace{display:flex;flex-direction:column}.geometry{order:1;min-height:0;padding:10px}.instructions{order:2;padding:20px}.instructions h2{font-size:24px}.instructions p{font-size:17px}.vertex-select{grid-template-columns:repeat(3,1fr)}.vbtn{padding:10px 6px;font-size:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <img class="logo" src="assets/prisming-logo.png" alt="Prisming">
+    <div class="title">יישומון חוצה זווית במשולש</div>
+    <button class="reset" id="resetBtn">איפוס</button>
+  </header>
+  <main class="workspace">
+    <section class="card geometry" aria-label="שרטוט אינטראקטיבי">
+      <svg id="svg" viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg">
+        <polygon id="triangle" class="side" points=""></polygon>
+        <line id="bisectorLine" class="bisector-line"></line>
+        <line id="hiSide1" class="theorem-highlight pair1"></line>
+        <line id="hiSeg1" class="theorem-highlight pair1"></line>
+        <line id="hiSide2" class="theorem-highlight pair2"></line>
+        <line id="hiSeg2" class="theorem-highlight pair2"></line>
+        <path id="arc1" class="angle-arc"></path>
+        <path id="arc2" class="angle-arc"></path>
+        <rect id="angleBg1" class="angle-value-bg" width="58" height="28"></rect>
+        <text id="angleValue1" class="angle-value"></text>
+        <rect id="angleBg2" class="angle-value-bg" width="58" height="28"></rect>
+        <text id="angleValue2" class="angle-value"></text>
+
+        <rect id="lenBgSide1" class="length-bg" width="92" height="28"></rect>
+        <text id="lenSide1" class="length-label pair1"></text>
+        <rect id="lenBgSeg1" class="length-bg" width="92" height="28"></rect>
+        <text id="lenSeg1" class="length-label pair1"></text>
+        <rect id="lenBgSide2" class="length-bg" width="92" height="28"></rect>
+        <text id="lenSide2" class="length-label pair2"></text>
+        <rect id="lenBgSeg2" class="length-bg" width="92" height="28"></rect>
+        <text id="lenSeg2" class="length-label pair2"></text>
+
+        <circle id="intersectionDot" class="intersection-dot" r="7"></circle>
+
+        <circle id="handleA" class="vhandle" r="8"></circle>
+        <circle id="handleB" class="vhandle" r="8"></circle>
+        <circle id="handleC" class="vhandle" r="8"></circle>
+        <text id="labelA" class="vlabel"></text>
+        <text id="labelB" class="vlabel"></text>
+        <text id="labelC" class="vlabel"></text>
+        <text id="labelD" class="dlabel">D</text>
+      </svg>
+    </section>
+    <aside class="card instructions">
+      <h2>מה רואים?</h2>
+      <p>לפניכם <strong>חוצה זווית במשולש</strong>. חוצה הזווית יוצא מקודקוד ומחלק את הזווית לשתי זוויות שוות.</p>
+      <p>גררו את קודקודי המשולש ושנו את צורתו. תוכלו לבחור חוצה זווית היוצא מכל אחד מהקודקודים ולראות כיצד שתי הזוויות נשארות שוות בכל מצב.</p>
+      <div class="selector-title">בחרו את הקודקוד שממנו יוצא חוצה הזווית:</div>
+      <div class="vertex-select">
+        <button class="vbtn" data-v="A" id="btnA">מ־A</button>
+        <button class="vbtn" data-v="B" id="btnB">מ־B</button>
+        <button class="vbtn" data-v="C" id="btnC">מ־C</button>
+      </div>
+      <button class="ratio-btn" id="ratioBtn">הצג את משפט חוצה הזווית</button>
+      <div class="theorem-panel" id="theoremPanel">
+        <h3>משפט חוצה הזווית</h3>
+        <p>חוצה זווית במשולש מחלק את הצלע שמול הזווית <strong>באותו יחס</strong> שבו שתי הצלעות הסמוכות לזווית מתייחסות זו לזו.</p>
+        <div class="theorem-formula" id="theoremFormula"></div>
+        <div class="theorem-values" id="theoremValues"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+<script>
+(function(){
+  const svg = document.getElementById('svg');
+  const triangleEl = document.getElementById('triangle');
+  const bisectorLineEl = document.getElementById('bisectorLine');
+  const intersectionDotEl = document.getElementById('intersectionDot');
+  const arc1El = document.getElementById('arc1');
+  const arc2El = document.getElementById('arc2');
+  const angleValue1 = document.getElementById('angleValue1');
+  const angleValue2 = document.getElementById('angleValue2');
+  const angleBg1 = document.getElementById('angleBg1');
+  const angleBg2 = document.getElementById('angleBg2');
+  const theoremPanel = document.getElementById('theoremPanel');
+  const theoremFormula = document.getElementById('theoremFormula');
+  const theoremValues = document.getElementById('theoremValues');
+  const hiSide1 = document.getElementById('hiSide1');
+  const hiSeg1 = document.getElementById('hiSeg1');
+  const hiSide2 = document.getElementById('hiSide2');
+  const hiSeg2 = document.getElementById('hiSeg2');
+  const ratioBtn = document.getElementById('ratioBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const labelD = document.getElementById('labelD');
+  const lenEls = {
+    side1:{text:document.getElementById('lenSide1'),bg:document.getElementById('lenBgSide1')},
+    seg1:{text:document.getElementById('lenSeg1'),bg:document.getElementById('lenBgSeg1')},
+    side2:{text:document.getElementById('lenSide2'),bg:document.getElementById('lenBgSide2')},
+    seg2:{text:document.getElementById('lenSeg2'),bg:document.getElementById('lenBgSeg2')}
+  };
+
+  const handles = {A:document.getElementById('handleA'),B:document.getElementById('handleB'),C:document.getElementById('handleC')};
+  const labels = {A:document.getElementById('labelA'),B:document.getElementById('labelB'),C:document.getElementById('labelC')};
+  const vbtns = {A:document.getElementById('btnA'),B:document.getElementById('btnB'),C:document.getElementById('btnC')};
+
+  const DEFAULT={A:{x:150,y:340},B:{x:560,y:340},C:{x:330,y:70}};
+  let pts={A:{...DEFAULT.A},B:{...DEFAULT.B},C:{...DEFAULT.C}};
+  let selected='A';
+  let showRatio=false;
+  const OPP={A:['B','C'],B:['A','C'],C:['A','B']};
+  const UNIT=40;
+
+  function dist(p,q){return Math.hypot(p.x-q.x,p.y-q.y)}
+  function midpoint(p,q){return{x:(p.x+q.x)/2,y:(p.y+q.y)/2}}
+  function pointOnSegmentByBisector(V,P1,P2){
+    const a=dist(V,P1), b=dist(V,P2);
+    const s=a+b || 1;
+    return{x:(b*P1.x+a*P2.x)/s,y:(b*P1.y+a*P2.y)/s};
+  }
+  function normAngle(a){while(a<0)a+=Math.PI*2;while(a>=Math.PI*2)a-=Math.PI*2;return a}
+  function minorDelta(a1,a2){
+    let d=normAngle(a2)-normAngle(a1);
+    while(d<=-Math.PI)d+=Math.PI*2;
+    while(d>Math.PI)d-=Math.PI*2;
+    return d;
+  }
+  function polar(c,r,a){return{x:c.x+r*Math.cos(a),y:c.y+r*Math.sin(a)}}
+  function arcPath(c,r,a1,a2){
+    const d=minorDelta(a1,a2), end=a1+d;
+    const p1=polar(c,r,a1), p2=polar(c,r,end);
+    const sweep=d>0?1:0;
+    return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${r} ${r} 0 0 ${sweep} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  function angleBetween(u,v){
+    const dot=u.x*v.x+u.y*v.y;
+    const nu=Math.hypot(u.x,u.y), nv=Math.hypot(v.x,v.y);
+    const c=Math.max(-1,Math.min(1,dot/((nu*nv)||1)));
+    return Math.acos(c);
+  }
+  function outwardOffset(P,Q,amount){
+    const dx=Q.x-P.x,dy=Q.y-P.y,len=Math.hypot(dx,dy)||1;
+    return{x:-dy/len*amount,y:dx/len*amount};
+  }
+  function segmentLabelPos(P,Q,ref,amount=24){
+    const m=midpoint(P,Q);
+    const dx=Q.x-P.x,dy=Q.y-P.y,len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len, ny=dx/len;
+    const c1={x:m.x+nx*amount,y:m.y+ny*amount};
+    const c2={x:m.x-nx*amount,y:m.y-ny*amount};
+    return dist(c1,ref)>dist(c2,ref)?c1:c2;
+  }
+  function setLengthLabel(group,p,textValue,show){
+    group.text.setAttribute('x',p.x); group.text.setAttribute('y',p.y+1); group.text.textContent=textValue;
+    group.bg.setAttribute('x',p.x-46); group.bg.setAttribute('y',p.y-14);
+    group.text.classList.toggle('show',show); group.bg.classList.toggle('show',show);
+  }
+
+  function render(){
+    triangleEl.setAttribute('points',`${pts.A.x},${pts.A.y} ${pts.B.x},${pts.B.y} ${pts.C.x},${pts.C.y}`);
+    ['A','B','C'].forEach(k=>{
+      handles[k].setAttribute('cx',pts[k].x);handles[k].setAttribute('cy',pts[k].y);
+      handles[k].classList.toggle('selected',k===selected);
+      labels[k].setAttribute('x',pts[k].x);labels[k].setAttribute('y',pts[k].y-18);labels[k].textContent=k;
+    });
+
+    const [n1,n2]=OPP[selected];
+    const V=pts[selected],P1=pts[n1],P2=pts[n2];
+    const D=pointOnSegmentByBisector(V,P1,P2);
+
+    bisectorLineEl.setAttribute('x1',V.x);bisectorLineEl.setAttribute('y1',V.y);
+    bisectorLineEl.setAttribute('x2',D.x);bisectorLineEl.setAttribute('y2',D.y);
+    intersectionDotEl.setAttribute('cx',D.x);intersectionDotEl.setAttribute('cy',D.y);
+    labelD.setAttribute('x',D.x);labelD.setAttribute('y',D.y-14);
+
+    const a1=Math.atan2(P1.y-V.y,P1.x-V.x);
+    const ad=Math.atan2(D.y-V.y,D.x-V.x);
+    const a2=Math.atan2(P2.y-V.y,P2.x-V.x);
+    const radius=42;
+    arc1El.setAttribute('d',arcPath(V,radius,a1,ad));
+    arc2El.setAttribute('d',arcPath(V,radius,ad,a2));
+
+    const halfDeg=angleBetween({x:P1.x-V.x,y:P1.y-V.y},{x:D.x-V.x,y:D.y-V.y})*180/Math.PI;
+
+    // ערכי הזוויות נשארים בתוך המשולש, אך מקבלים מיקום דינמי כדי שלא יתנגשו.
+    const d1=minorDelta(a1,ad), d2=minorDelta(ad,a2);
+    const midA1=a1+d1/2, midA2=ad+d2/2;
+    const nearest=Math.min(dist(V,P1),dist(V,P2),dist(V,D));
+    const smallAngleBoost=Math.max(0,26-halfDeg)*2.2;
+    let r1=Math.min(Math.max(72,72+smallAngleBoost),Math.max(74,nearest*.50));
+    let r2=Math.min(Math.max(108,108+smallAngleBoost),Math.max(112,nearest*.72));
+    // אם המשולש קטן מאוד, מדורגים לאורך שני חצאי הזווית ככל שניתן.
+    if(nearest<170){ r1=Math.max(58,nearest*.38); r2=Math.max(92,nearest*.62); }
+    const lp1=polar(V,r1,midA1), lp2=polar(V,r2,midA2);
+    const angleText=`${halfDeg.toFixed(1)}°`;
+    [[angleValue1,angleBg1,lp1],[angleValue2,angleBg2,lp2]].forEach(([txt,bg,p])=>{
+      txt.setAttribute('x',p.x); txt.setAttribute('y',p.y+1); txt.textContent=angleText;
+      bg.setAttribute('x',p.x-29); bg.setAttribute('y',p.y-14);
+    });
+
+    const side1=dist(V,P1)/UNIT, side2=dist(V,P2)/UNIT;
+    const seg1=dist(P1,D)/UNIT, seg2=dist(D,P2)/UNIT;
+    const ratioSides=side1/side2;
+
+    // בהצגת משפט חוצה הזווית מציגים גם את אורכי ארבעת הקטעים הרלוונטיים על השרטוט עצמו.
+    // התוויות ממוקמות מחוץ לצלע/קטע כדי לא להסתיר את המשולש.
+    const side1Pos=segmentLabelPos(V,P1,P2,27);
+    const side2Pos=segmentLabelPos(V,P2,P1,27);
+    const seg1Pos=segmentLabelPos(P1,D,V,27);
+    const seg2Pos=segmentLabelPos(D,P2,V,27);
+    setLengthLabel(lenEls.side1,side1Pos,`${selected}${n1} = ${side1.toFixed(2)}`,showRatio);
+    setLengthLabel(lenEls.side2,side2Pos,`${selected}${n2} = ${side2.toFixed(2)}`,showRatio);
+    setLengthLabel(lenEls.seg1,seg1Pos,`${n1}D = ${seg1.toFixed(2)}`,showRatio);
+    setLengthLabel(lenEls.seg2,seg2Pos,`D${n2} = ${seg2.toFixed(2)}`,showRatio);
+
+    // כשהמשפט מוצג, כל זוג מתאים מקבל אותו צבע:
+    // V-P1 עם P1-D, ו-V-P2 עם D-P2.
+    [[hiSide1,V,P1],[hiSeg1,P1,D],[hiSide2,V,P2],[hiSeg2,D,P2]].forEach(([el,p,q])=>{
+      el.setAttribute('x1',p.x);el.setAttribute('y1',p.y);el.setAttribute('x2',q.x);el.setAttribute('y2',q.y);
+      el.classList.toggle('show',showRatio);
+    });
+
+    const leftSeg=`${n1}D`, rightSeg=`D${n2}`, leftSide=`${selected}${n1}`, rightSide=`${selected}${n2}`;
+    const frac=(num,den,numClass='',denClass='')=>`<span class="frac"><span class="num ${numClass}">${num}</span><span class="den ${denClass}">${den}</span></span>`;
+    theoremFormula.innerHTML=`${frac(leftSeg,rightSeg,'key1','key2')}<span class="eq-sign">=</span>${frac(leftSide,rightSide,'key1','key2')}`;
+    theoremValues.innerHTML=`${frac(seg1.toFixed(2),seg2.toFixed(2))}<span class="eq-sign">=</span>${frac(side1.toFixed(2),side2.toFixed(2))}<span class="eq-sign">≈ ${ratioSides.toFixed(2)}</span>`;
+    theoremPanel.classList.toggle('show',showRatio);
+  }
+
+  Object.keys(vbtns).forEach(k=>vbtns[k].addEventListener('click',()=>{
+    selected=k;Object.keys(vbtns).forEach(kk=>vbtns[kk].classList.toggle('active',kk===k));render();
+  }));
+  vbtns[selected].classList.add('active');
+
+  ratioBtn.addEventListener('click',()=>{
+    showRatio=!showRatio;
+    ratioBtn.textContent=showRatio?'הסתר את משפט חוצה הזווית':'הצג את משפט חוצה הזווית';
+    render();
+  });
+
+  resetBtn.addEventListener('click',()=>{pts={A:{...DEFAULT.A},B:{...DEFAULT.B},C:{...DEFAULT.C}};render()});
+
+  function svgPoint(evt){const pt=svg.createSVGPoint();pt.x=evt.clientX;pt.y=evt.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse())}
+  const MARGIN=25;
+  function clamp(p){return{x:Math.max(MARGIN,Math.min(700-MARGIN,p.x)),y:Math.max(MARGIN,Math.min(420-MARGIN,p.y))}}
+  let draggingKey=null;
+  Object.keys(handles).forEach(k=>{
+    handles[k].addEventListener('pointerdown',e=>{draggingKey=k;handles[k].setPointerCapture(e.pointerId)});
+    handles[k].addEventListener('pointermove',e=>{if(draggingKey!==k)return;pts[k]=clamp(svgPoint(e));render()});
+    handles[k].addEventListener('pointerup',()=>{draggingKey=null});
+    handles[k].addEventListener('pointercancel',()=>{draggingKey=null});
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
